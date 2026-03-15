@@ -1,4 +1,4 @@
-from flask import Flask, request, abort
+from flask import Flask, request
 from linebot import LineBotApi, WebhookHandler
 from linebot.models import MessageEvent, TextMessage, TextSendMessage
 import yfinance as yf
@@ -11,16 +11,17 @@ LINE_CHANNEL_SECRET = "f7f7b714907d5efd93a29d5866c9593b"
 line_bot_api = LineBotApi(LINE_CHANNEL_ACCESS_TOKEN)
 handler = WebhookHandler(LINE_CHANNEL_SECRET)
 
+
 @app.route("/callback", methods=['POST'])
 def callback():
 
-    signature = request.headers['X-Line-Signature']
+    signature = request.headers.get('X-Line-Signature')
     body = request.get_data(as_text=True)
 
-    try:
-        handler.handle(body, signature)
-    except:
-        abort(400)
+    if signature is None:
+        return 'OK'
+
+    handler.handle(body, signature)
 
     return 'OK'
 
@@ -33,7 +34,6 @@ def handle_message(event):
     try:
         stock = yf.Ticker(text)
         price = stock.info["regularMarketPrice"]
-
         msg = f"{text} 目前價格: ${price}"
 
     except:
