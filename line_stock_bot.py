@@ -5,7 +5,7 @@ import yfinance as yf
 
 app = Flask(__name__)
 
-LINE_CHANNEL_ACCESS_TOKEN = "BPQ/+EOBTi0a5fWsab/05yvB8J8v4jsh3zqjk2TqnSoMJ5CsJxU2+RTGKlQx0FndpaX1nkj88rDh9HUk0mXCvK znM3sTGM9k6upXohJb/+JtLYzFboHjcT41gIldo8TNka3g0m8jfe/dgZuU8ll8tAdB04t89/1O/w1cDnyilFU="
+LINE_CHANNEL_ACCESS_TOKEN = "9M9gWuDL+9swPRQtYnGcAfXFwwy1rwlI2b9gBXBhmKv/5yXkdvAMWKCzptxJu0E9paX1nkj88rDh9HUk0mXCvK znM3sTGM9k6upXohJb/+I/civXiL3dU6dp/1Rpz2X+vPvAhMGj5PE5p0L1pCPR7gdB04t89/1O/w1cDnyilFU="
 LINE_CHANNEL_SECRET = "23cd049315c1c76fc3c115445fe1f650"
 
 line_bot_api = LineBotApi(LINE_CHANNEL_ACCESS_TOKEN)
