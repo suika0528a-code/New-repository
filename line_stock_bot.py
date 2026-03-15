@@ -1,66 +1,64 @@
 from flask import Flask, request
-from linebot import LineBotApi, WebhookHandler
-from linebot.models import MessageEvent, TextMessage, TextSendMessage
+from linebot.v3.messaging import MessagingApi, Configuration, ApiClient, ReplyMessageRequest, TextMessage
+from linebot.v3.webhook import WebhookHandler
+from linebot.v3.webhooks import MessageEvent, TextMessageContent
 import yfinance as yf
+import os
 
 app = Flask(__name__)
+
 
 LINE_CHANNEL_ACCESS_TOKEN = "BPQ/+EOBTi0a5fWsab/05yvB8J8v4jsh3zqjk2TqnSoMJ5CsJxU2+RTGKlQx0FndpaX1nkj88rDh9HUk0mXCvKznM3sTGM9k6upXohJb/+JtLYzFboHjcT41gIldo8TNka3g0m8jfe/dgZuU8ll8tAdB04t89/1O/w1cDnyilFU="
 LINE_CHANNEL_SECRET = "23cd049315c1c76fc3c115445fe1f650"
 
-line_bot_api = LineBotApi(LINE_CHANNEL_ACCESS_TOKEN)
+configuration = Configuration(access_token=LINE_CHANNEL_ACCESS_TOKEN)
 handler = WebhookHandler(LINE_CHANNEL_SECRET)
 
 
 @app.route("/callback", methods=['POST'])
 def callback():
-
+    
     signature = request.headers.get('X-Line-Signature')
     body = request.get_data(as_text=True)
 
-    if signature:
+    try:
         handler.handle(body, signature)
+    except Exception as e:
+        print("Webhook error:", e)
 
-    return 'OK'
+    return "OK"
 
 
-@handler.add(MessageEvent, message=TextMessage)
+@handler.add(MessageEvent, message=TextMessageContent)
 def handle_message(event):
 
-    text = event.message.text.strip().upper()
+    user_text = event.message.text.strip().upper()
 
-    print("收到訊息:", text)
-
-    try:
-        stock = yf.Ticker(text)
-        price = stock.fast_info["last_price"]
-
-        msg = f"{text} 目前價格: ${round(price,2)}"
-
-    except:
-        msg = f"查不到股票: {text}"
-
-    line_bot_api.reply_message(
-        event.reply_token,
-        TextSendMessage(text=msg)
-    )
-
-    text = event.message.text.upper()
+    print("收到訊息:", user_text)
 
     try:
-        stock = yf.Ticker(text)
-        price = stock.fast_info["last_price"]
+        stock = yf.Ticker(user_text)
+        price = stock.fast_info.get("last_price")
 
-        msg = f"{text} 目前價格: ${round(price,2)}"
+        if price:
+            msg = f"{user_text} 目前價格: ${round(price,2)}"
+        else:
+            msg = "查不到此股票\n請輸入例如：NVDA / TSLA / AAPL"
 
-    except:
-        msg = "查不到此股票，請輸入例如 NVDA / TSLA / AAPL"
+    except Exception as e:
+        print("股票查詢錯誤:", e)
+        msg = "股票查詢失敗"
 
-    line_bot_api.reply_message(
-        event.reply_token,
-        TextSendMessage(text=msg)
-    )
+    with ApiClient(configuration) as api_client:
+        line_bot_api = MessagingApi(api_client)
+        line_bot_api.reply_message(
+            ReplyMessageRequest(
+                reply_token=event.reply_token,
+                messages=[TextMessage(text=msg)]
+            )
+        )
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=10000)
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host="0.0.0.0", port=port)
